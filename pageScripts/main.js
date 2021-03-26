@@ -1,3 +1,13 @@
+
+const utils = {
+  sleep(t = 0) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, t)
+    })
+  }
+}
 // 命名空间
 let ajax_interceptor_qoweifjqon = {
   settings: {
@@ -7,9 +17,11 @@ let ajax_interceptor_qoweifjqon = {
   originalXHR: window.XMLHttpRequest,
   myXHR: function () {
     let pageScriptEventDispatched = false;
-    const modifyResponse = () => {
-      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({ filterType = 'normal', switchOn = true, match, overrideTxt = '' }) => {
+    let delayTime2 = undefined
+    const modifyResponse = async () => {
+      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({ filterType = 'normal', switchOn = true, match, overrideTxt = '', delayTime = 0 }) => {
         let matched = false;
+
         if (switchOn && match) {
           if (filterType === 'normal' && this.responseURL.indexOf(match) > -1) {
             matched = true;
@@ -18,6 +30,7 @@ let ajax_interceptor_qoweifjqon = {
           }
         }
         if (matched) {
+          delayTime2 = delayTime
           this.responseText = overrideTxt;
           this.response = overrideTxt;
 
@@ -29,28 +42,31 @@ let ajax_interceptor_qoweifjqon = {
           }
         }
       })
+      console.log('ajax delayTime开始', delayTime2)
+      await utils.sleep(delayTime2)
+      console.log('ajax delayTime 延迟结束')
     }
 
     const xhr = new ajax_interceptor_qoweifjqon.originalXHR;
     for (let attr in xhr) {
       if (attr === 'onreadystatechange') {
-        xhr.onreadystatechange = (...args) => {
+        xhr.onreadystatechange = async (...args) => {
           if (this.readyState == 4) {
             // 请求成功
             if (ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_switchOn) {
               // 开启拦截
-              modifyResponse();
+              await modifyResponse();
             }
           }
           this.onreadystatechange && this.onreadystatechange.apply(this, args);
         }
         continue;
       } else if (attr === 'onload') {
-        xhr.onload = (...args) => {
+        xhr.onload = async (...args) => {
           // 请求成功
           if (ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_switchOn) {
             // 开启拦截
-            modifyResponse();
+            await modifyResponse();
           }
           this.onload && this.onload.apply(this, args);
         }
@@ -80,9 +96,11 @@ let ajax_interceptor_qoweifjqon = {
 
   originalFetch: window.fetch.bind(window),
   myFetch: function (...args) {
-    return ajax_interceptor_qoweifjqon.originalFetch(...args).then((response) => {
+    return ajax_interceptor_qoweifjqon.originalFetch(...args).then(async (response) => {
       let txt = undefined;
-      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({ filterType = 'normal', switchOn = true, match, overrideTxt = '' }) => {
+      let delayTime2 = undefined
+      // debugger
+      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({ filterType = 'normal', switchOn = true, match, overrideTxt = '', delayTime = 0 }) => {
         let matched = false;
         if (switchOn && match) {
           if (filterType === 'normal' && response.url.indexOf(match) > -1) {
@@ -97,15 +115,19 @@ let ajax_interceptor_qoweifjqon = {
             detail: { url: response.url, match }
           }));
           txt = overrideTxt;
+          console.log('matched', delayTime)
+          delayTime2 = delayTime
         }
       });
 
-
+      console.log('delayTime开始', delayTime2)
+      await utils.sleep(delayTime2)
+      console.log('delayTime 延迟结束')
       if (txt !== undefined) {
         const stream = new ReadableStream({
           start(controller) {
             const encoder = new TextEncoder();//之前的charCodeAt导致中文乱码
-            const view = encoder.encode(txt); 
+            const view = encoder.encode(txt);
             controller.enqueue(view);
             controller.close();
           }

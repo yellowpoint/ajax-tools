@@ -167,7 +167,7 @@ export default class Main extends Component {
                 onChange={this.handleCollaseChange}
               // onChangeDone={this.handleCollaseChange}
               >
-                {window.setting.ajaxInterceptor_rules.map(({ filterType = 'normal', match, overrideTxt, switchOn = true, key }, i) => (
+                {window.setting.ajaxInterceptor_rules.map(({ filterType = 'normal', match, overrideTxt, switchOn = true, key, delayTime = 0 }, i) => (
                   <Panel
                     key={key}
                     header={
@@ -204,6 +204,7 @@ export default class Main extends Component {
                     }
                   >
                     <Replacer
+                      delayTime={delayTime}
                       defaultValue={overrideTxt}
                       updateAddBtnTop={this.updateAddBtnTop}
                       index={i}
