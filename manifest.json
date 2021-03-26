@@ -1,7 +1,7 @@
 {
-  "name": "Ajax Tools",
+  "name": "Api-Tools",
   "version": "0.1",
-  "description": "ajax工具",
+  "description": "api工具",
   "permissions": [
     "storage",
     "tabs",
