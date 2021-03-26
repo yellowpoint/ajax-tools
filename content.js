@@ -53,7 +53,7 @@ if (window.self === window.top) {
       let show = false;
 
       chrome.runtime.onMessage.addListener((msg, sender) => {
-        if (msg == 'toggle') {
+        if (msg == 'toggle'||msg?.key==='toggle') {
           show = !show;
           iframe.style.setProperty('transform', show ? 'translateX(0)' : 'translateX(420px)', 'important');
         }
@@ -67,12 +67,13 @@ if (window.self === window.top) {
 
 // 接收background.js传来的信息，转发给pageScript
 chrome.runtime.onMessage.addListener(msg => {
+  console.log('content',msg)
   if (msg.type === 'ajaxInterceptor' && msg.to === 'content') {
     if (msg.hasOwnProperty('iframeScriptLoaded')) {
       if (msg.iframeScriptLoaded) iframeLoaded = true;
-    } else {
-      postMessage({...msg, to: 'pageScript'});
-    }
+      return
+    } 
+    postMessage({...msg, to: 'pageScript'});
   }
 });
 

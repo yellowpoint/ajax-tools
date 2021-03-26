@@ -1,6 +1,6 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import 'antd/dist/antd.css';
-import {Switch, Collapse, Input, Select, Button, Badge, Tooltip} from 'antd';
+import { Switch, Collapse, Input, Select, Button, Badge, Tooltip, Popconfirm } from 'antd';
 const Panel = Collapse.Panel;
 
 import Replacer from './Replacer';
@@ -9,10 +9,10 @@ import './Main.less';
 
 const buildUUID = () => {
   var dt = new Date().getTime();
-  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      var r = (dt + Math.random()*16)%16 | 0;
-      dt = Math.floor(dt/16);
-      return (c=='x' ? r :(r&0x3|0x8)).toString(16);
+  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (dt + Math.random() * 16) % 16 | 0;
+    dt = Math.floor(dt / 16);
+    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   });
   return uuid;
 }
@@ -21,9 +21,9 @@ const buildUUID = () => {
 export default class Main extends Component {
   constructor() {
     super();
-    chrome.runtime.onMessage.addListener(({type, to, url, match}) => {
+    chrome.runtime.onMessage.addListener(({ type, to, url, match }) => {
       if (type === 'ajaxInterceptor' && to === 'iframe') {
-        const {interceptedRequests} = this.state;
+        const { interceptedRequests } = this.state;
         if (!interceptedRequests[match]) interceptedRequests[match] = [];
 
         const exits = interceptedRequests[match].some(obj => {
@@ -33,11 +33,11 @@ export default class Main extends Component {
           }
           return false;
         });
-        
+
         if (!exits) {
-          interceptedRequests[match].push({url, num: 1});
+          interceptedRequests[match].push({ url, num: 1 });
         }
-        this.setState({interceptedRequests}, () => {
+        this.setState({ interceptedRequests }, () => {
           if (!exits) {
             // 新增的拦截的url，会多展示一行url，需要重新计算高度
             this.updateAddBtnTop_interval();
@@ -46,7 +46,7 @@ export default class Main extends Component {
       }
     });
 
-    chrome.runtime.sendMessage(chrome.runtime.id, {type: 'ajaxInterceptor', to: 'background', iframeScriptLoaded: true});
+    chrome.runtime.sendMessage(chrome.runtime.id, { type: 'ajaxInterceptor', to: 'background', iframeScriptLoaded: true });
 
     this.collapseWrapperHeight = -1;
   }
@@ -72,7 +72,7 @@ export default class Main extends Component {
   }
 
   // 计算按钮位置
-  updateAddBtnTop_interval = ({timeout = 1000, interval = 50 } = {}) => {
+  updateAddBtnTop_interval = ({ timeout = 1000, interval = 50 } = {}) => {
     const i = setInterval(this.updateAddBtnTop, interval);
     setTimeout(() => {
       clearInterval(i);
@@ -81,10 +81,12 @@ export default class Main extends Component {
 
   set = (key, value) => {
     // 发送给background.js
-    chrome.runtime.sendMessage(chrome.runtime.id, {type: 'ajaxInterceptor', to: 'background', key, value});
-    chrome.storage && chrome.storage.local.set({[key]: value});
+    chrome.runtime.sendMessage(chrome.runtime.id, { type: 'ajaxInterceptor', to: 'background', key, value });
+    chrome.storage && chrome.storage.local.set({ [key]: value });
   }
-
+  handleCloseIframe = () => {
+    chrome.runtime.sendMessage(chrome.runtime.id, { type: 'ajaxInterceptor', to: 'background', key: 'toggle', value: false });
+  }
   forceUpdateDebouce = () => {
     clearTimeout(this.forceUpdateTimeout);
     this.forceUpdateTimeout = setTimeout(() => {
@@ -115,13 +117,13 @@ export default class Main extends Component {
   }
 
   handleClickAdd = () => {
-    window.setting.ajaxInterceptor_rules.push({match: '', switchOn: true, key: buildUUID()});
+    window.setting.ajaxInterceptor_rules.push({ match: '', switchOn: true, key: buildUUID() });
     this.forceUpdate(this.updateAddBtnTop_interval);
   }
 
   handleClickRemove = (e, i) => {
     e.stopPropagation();
-    const {interceptedRequests} = this.state;
+    const { interceptedRequests } = this.state;
     const match = window.setting.ajaxInterceptor_rules[i].match;
 
     window.setting.ajaxInterceptor_rules = [
@@ -131,10 +133,10 @@ export default class Main extends Component {
     this.set('ajaxInterceptor_rules', window.setting.ajaxInterceptor_rules);
 
     delete interceptedRequests[match];
-    this.setState({interceptedRequests}, this.updateAddBtnTop_interval);
+    this.setState({ interceptedRequests }, this.updateAddBtnTop_interval);
   }
 
-  handleCollaseChange = ({timeout = 1200, interval = 50 }) => {
+  handleCollaseChange = ({ timeout = 1200, interval = 50 }) => {
     this.updateAddBtnTop_interval();
   }
 
@@ -148,33 +150,36 @@ export default class Main extends Component {
   render() {
     return (
       <div className="main">
-        开关：
+        <div className="header">
+          <Button onClick={e => this.handleCloseIframe(e)}>收起弹窗</Button>
+        拦截开关：
         <Switch
-          style={{zIndex: 10}}
-          defaultChecked={window.setting.ajaxInterceptor_switchOn}
-          onChange={this.handleSwitchChange}
-        />
+            style={{ zIndex: 10 }}
+            defaultChecked={window.setting.ajaxInterceptor_switchOn}
+            onChange={this.handleSwitchChange}
+          />
+        </div>
         <div className={window.setting.ajaxInterceptor_switchOn ? 'settingBody' : 'settingBody settingBody-hidden'}>
           {window.setting.ajaxInterceptor_rules && window.setting.ajaxInterceptor_rules.length > 0 ? (
             <div ref={ref => this.collapseWrapperRef = ref}>
               <Collapse
                 className={window.setting.ajaxInterceptor_switchOn ? 'collapse' : 'collapse collapse-hidden'}
                 onChange={this.handleCollaseChange}
-                // onChangeDone={this.handleCollaseChange}
+              // onChangeDone={this.handleCollaseChange}
               >
-                {window.setting.ajaxInterceptor_rules.map(({filterType = 'normal', match, overrideTxt, switchOn = true, key}, i) => (
+                {window.setting.ajaxInterceptor_rules.map(({ filterType = 'normal', match, overrideTxt, switchOn = true, key }, i) => (
                   <Panel
                     key={key}
                     header={
                       <div className="panel-header" onClick={e => e.stopPropagation()}>
-                        <Input.Group compact style={{width: '74%'}}>
-                          <Select defaultValue={filterType} style={{width: '37%'}} onChange={e => this.handleFilterTypeChange(e, i)}>
+                        <Input.Group compact style={{ width: '74%' }}>
+                          <Select defaultValue={filterType} style={{ width: '37%' }} onChange={e => this.handleFilterTypeChange(e, i)}>
                             <Option value="normal">normal</Option>
                             <Option value="regex">regex</Option>
                           </Select>
                           <Input
                             placeholder={filterType === 'normal' ? 'eg: abc/get' : 'eg: abc.*'}
-                            style={{width: '63%'}}
+                            style={{ width: '63%' }}
                             defaultValue={match}
                             // onClick={e => e.stopPropagation()}
                             onChange={e => this.handleMatchChange(e, i)}
@@ -185,14 +190,16 @@ export default class Main extends Component {
                           defaultChecked={switchOn}
                           onChange={val => this.handleSingleSwitchChange(val, i)}
                         />
-                        <Button
-                          style={{marginRight: '16px'}}
-                          type="primary"
-                          shape="circle" 
-                          icon="minus"
-                          size="small"
-                          onClick={e => this.handleClickRemove(e, i)}
-                        />
+                        <Popconfirm title="确定删除？" onConfirm={e => this.handleClickRemove(e, i)}>
+                          <Button
+                            style={{ marginRight: '16px' }}
+                            type="primary"
+                            shape="circle"
+                            icon="minus"
+                            size="small"
+                          />
+                        </Popconfirm>
+
                       </div>
                     }
                   >
@@ -228,7 +235,7 @@ export default class Main extends Component {
                           Intercepted Requests:
                         </div>
                         <div className="intercepted">
-                          {this.state.interceptedRequests[match] && this.state.interceptedRequests[match].map(({url, num}) => (
+                          {this.state.interceptedRequests[match] && this.state.interceptedRequests[match].map(({ url, num }) => (
                             <Tooltip placement="top" title={url} key={url}>
                               <Badge
                                 count={num}
@@ -248,18 +255,15 @@ export default class Main extends Component {
                     )}
                   </Panel>
                 ))}
-              </Collapse> 
+              </Collapse>
             </div>
-          ): <div />}
+          ) : <div />}
           <div ref={ref => this.addBtnRef = ref} className="wrapper-btn-add">
             <Button
-              className={`btn-add ${window.setting.ajaxInterceptor_switchOn ? '' : ' btn-add-hidden'}`}
               type="primary"
-              shape="circle" 
-              icon="plus"
               onClick={this.handleClickAdd}
               disabled={!window.setting.ajaxInterceptor_switchOn}
-            />
+            >添加接口</Button>
           </div>
         </div>
       </div>

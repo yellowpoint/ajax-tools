@@ -104,8 +104,8 @@ let ajax_interceptor_qoweifjqon = {
       if (txt !== undefined) {
         const stream = new ReadableStream({
           start(controller) {
-            const encoder = new TextEncoder(); 
-            const view = encoder.encode(txt);
+            const encoder = new TextEncoder();//之前的charCodeAt导致中文乱码
+            const view = encoder.encode(txt); 
             controller.enqueue(view);
             controller.close();
           }
