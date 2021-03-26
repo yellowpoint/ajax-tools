@@ -148,6 +148,7 @@ export default class Main extends Component {
   render() {
     return (
       <div className="main">
+        开关：
         <Switch
           style={{zIndex: 10}}
           defaultChecked={window.setting.ajaxInterceptor_switchOn}

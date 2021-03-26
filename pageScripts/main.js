@@ -1,4 +1,3 @@
-
 // 命名空间
 let ajax_interceptor_qoweifjqon = {
   settings: {
@@ -6,10 +5,10 @@ let ajax_interceptor_qoweifjqon = {
     ajaxInterceptor_rules: [],
   },
   originalXHR: window.XMLHttpRequest,
-  myXHR: function() {
+  myXHR: function () {
     let pageScriptEventDispatched = false;
     const modifyResponse = () => {
-      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({filterType = 'normal', switchOn = true, match, overrideTxt = ''}) => {
+      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({ filterType = 'normal', switchOn = true, match, overrideTxt = '' }) => {
         let matched = false;
         if (switchOn && match) {
           if (filterType === 'normal' && this.responseURL.indexOf(match) > -1) {
@@ -21,17 +20,17 @@ let ajax_interceptor_qoweifjqon = {
         if (matched) {
           this.responseText = overrideTxt;
           this.response = overrideTxt;
-          
+
           if (!pageScriptEventDispatched) {
             window.dispatchEvent(new CustomEvent("pageScript", {
-              detail: {url: this.responseURL, match}
+              detail: { url: this.responseURL, match }
             }));
             pageScriptEventDispatched = true;
           }
         }
       })
     }
-    
+
     const xhr = new ajax_interceptor_qoweifjqon.originalXHR;
     for (let attr in xhr) {
       if (attr === 'onreadystatechange') {
@@ -57,7 +56,7 @@ let ajax_interceptor_qoweifjqon = {
         }
         continue;
       }
-  
+
       if (typeof xhr[attr] === 'function') {
         this[attr] = xhr[attr].bind(xhr);
       } else {
@@ -80,10 +79,10 @@ let ajax_interceptor_qoweifjqon = {
   },
 
   originalFetch: window.fetch.bind(window),
-  myFetch: function(...args) {
+  myFetch: function (...args) {
     return ajax_interceptor_qoweifjqon.originalFetch(...args).then((response) => {
       let txt = undefined;
-      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({filterType = 'normal', switchOn = true, match, overrideTxt = ''}) => {
+      ajax_interceptor_qoweifjqon.settings.ajaxInterceptor_rules.forEach(({ filterType = 'normal', switchOn = true, match, overrideTxt = '' }) => {
         let matched = false;
         if (switchOn && match) {
           if (filterType === 'normal' && response.url.indexOf(match) > -1) {
@@ -95,33 +94,31 @@ let ajax_interceptor_qoweifjqon = {
 
         if (matched) {
           window.dispatchEvent(new CustomEvent("pageScript", {
-            detail: {url: response.url, match}
+            detail: { url: response.url, match }
           }));
           txt = overrideTxt;
         }
       });
 
+
       if (txt !== undefined) {
         const stream = new ReadableStream({
           start(controller) {
-            const bufView = new Uint8Array(new ArrayBuffer(txt.length));
-            for (var i = 0; i < txt.length; i++) {
-              bufView[i] = txt.charCodeAt(i);
-            }
-  
-            controller.enqueue(bufView);
+            const encoder = new TextEncoder(); 
+            const view = encoder.encode(txt);
+            controller.enqueue(view);
             controller.close();
           }
         });
-  
+
         const newResponse = new Response(stream, {
           headers: response.headers,
           status: response.status,
           statusText: response.statusText,
         });
         const proxy = new Proxy(newResponse, {
-          get: function(target, name){
-            switch(name) {
+          get: function (target, name) {
+            switch (name) {
               case 'ok':
               case 'redirected':
               case 'type':
@@ -134,13 +131,13 @@ let ajax_interceptor_qoweifjqon = {
             return target[name];
           }
         });
-  
+
         for (let key in proxy) {
           if (typeof proxy[key] === 'function') {
             proxy[key] = proxy[key].bind(newResponse);
           }
         }
-  
+
         return proxy;
       } else {
         return response;
@@ -149,7 +146,7 @@ let ajax_interceptor_qoweifjqon = {
   },
 }
 
-window.addEventListener("message", function(event) {
+window.addEventListener("message", function (event) {
   const data = event.data;
 
   if (data.type === 'ajaxInterceptor' && data.to === 'pageScript') {

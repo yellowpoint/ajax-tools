@@ -31,7 +31,6 @@ let iframeLoaded = false;
 
 // 只在最顶层页面嵌入iframe
 if (window.self === window.top) {
-  console.log(11111)
   document.onreadystatechange = () => {
     if (document.readyState === 'complete') {
       iframe = document.createElement('iframe'); 
