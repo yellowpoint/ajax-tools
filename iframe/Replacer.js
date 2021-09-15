@@ -69,14 +69,15 @@ export default class Replacer extends Component {
 
     return (
       <>
-        <div className="replace-with">
-          替换内容:
-        </div>
-       延时ms数： <InputNumber
+        延时ms数： <InputNumber
           placeholder="0"
           value={this.state.delayTime}
           onBlur={e => this.handleDelayTime(e.target.value)} />
-          <br/>
+          返回http状态码：<InputNumber></InputNumber>
+        <div className="replace-with">
+          替换内容:
+        </div>
+        <br />
         <textarea
           className="overrideTxt"
           // placeholder="replace with"
